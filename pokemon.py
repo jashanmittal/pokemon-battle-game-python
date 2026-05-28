@@ -9,6 +9,9 @@ class Pokemon:
         self.element = element
         self.moves = moves
 
+    def copy(self):
+        return Pokemon(self.name, self.health, self.stamina, self.element, dict(self.moves))
+
 
 charmander = Pokemon("Charmander", 100, 60, "fire", {
                 "Scratch":20,
@@ -36,27 +39,27 @@ def starter_pokemon():
     "1. Bulbasaur\n2. Squirtle\n3. Charmander\n")
 
     if starter_pokemon == "1":
-        player_pokemon = bulbasaur
+        player_pokemon = bulbasaur.copy()
 
     elif starter_pokemon == "2":
-        player_pokemon = squirtle
+        player_pokemon = squirtle.copy()
 
     elif starter_pokemon == "3":
-        player_pokemon = charmander
+        player_pokemon = charmander.copy()
 
     else:
         print("Invalid Command")
-        return
+        return starter_pokemon()
     
     print(f"You have choosen {player_pokemon.name}")
     return player_pokemon
 
 
-def rival_pokemon():
-    rival_pokemon = random.choice([charmander, bulbasaur, squirtle])
-    print(f"The rival has {rival_pokemon.name}")
+def get_rival():
+    rival = random.choice([charmander, bulbasaur, squirtle]).copy()
+    print(f"The rival has {rival.name}")
     time.sleep(0.7)
-    return rival_pokemon
+    return rival
 
 
 def battle_menu(player_pokemon, rival_pokemon):
@@ -110,10 +113,10 @@ def bag(player_pokemon, rival_pokemon):
         time.sleep(0.7)
         print(f"{player_pokemon.name} is recovered by 20 points")
 
-        rival_attack(player_pokemon, rival_pokemon)
-
         if player_pokemon.health > 100:
             player_pokemon.health = 100
+
+        rival_attack(player_pokemon, rival_pokemon)
 
     else:
         print("Invalid command")
@@ -169,6 +172,7 @@ def player_attack(player_pokemon, rival_pokemon):
     move = moves[int(move_choose) - 1]
 
     damage = player_pokemon.moves[move]
+    damage = elements_effectiveness(player_pokemon, rival_pokemon, damage)
 
     rival_pokemon.health -= damage
 
@@ -179,6 +183,18 @@ def player_attack(player_pokemon, rival_pokemon):
 
     if rival_pokemon.health <= 0:
         print("You defeated the Rival!")
+        time.sleep(1)
+        leveling(player_pokemon)
+        print("Your pokemon levelled up and gained +1 attack and +10 health")
+        time.sleep(1)
+        print("Searching for rival...")
+        time.sleep(1)
+        print("Found a rival!")
+
+        new_rival = get_rival()
+        battle_menu(player_pokemon, new_rival)
+        
+
 
     else:
         rival_attack(player_pokemon, rival_pokemon)
@@ -186,20 +202,21 @@ def player_attack(player_pokemon, rival_pokemon):
 
 
 def rival_attack(player_pokemon, rival_pokemon):
-    rival_attack = random.choice(list(rival_pokemon.moves.keys()) + ["rest"])
+    chosen_move = random.choice(list(rival_pokemon.moves.keys()) + ["rest"])
 
-    if rival_attack == "rest":
+    if chosen_move == "rest":
+        print(f"Rival's {rival_pokemon.name} rested!")
         rival_pokemon.stamina += 20
         if  rival_pokemon.stamina > 60:
             rival_pokemon.stamina = 60
-        battle_menu(player_pokemon, rival_pokemon)
 
     else:
-        damage = rival_pokemon.moves[rival_attack]
+        damage = rival_pokemon.moves[chosen_move]
+        damage = elements_effectiveness(rival_pokemon, player_pokemon, damage)
         
         player_pokemon.health -= damage
 
-        print(f"Rival's {rival_pokemon.name} used {rival_attack}")
+        print(f"Rival's {rival_pokemon.name} used {chosen_move}")
         time.sleep(1)
         print(f"It did {damage} on your {player_pokemon.name}")
 
@@ -211,6 +228,36 @@ def rival_attack(player_pokemon, rival_pokemon):
         battle_menu(player_pokemon, rival_pokemon)
 
 
+def elements_effectiveness(player_pokemon, rival_pokemon, damage):
+    if player_pokemon.element == "fire" and rival_pokemon.element == "grass":
+        damage *= 2
+
+    elif player_pokemon.element == "water" and rival_pokemon.element == "fire":
+        damage *= 2
+
+    elif player_pokemon.element == "grass" and rival_pokemon.element == "water":
+        damage *= 2
+
+    elif player_pokemon.element == "fire" and rival_pokemon.element == "water":
+        damage /= 2
+
+    elif player_pokemon.element == "water" and rival_pokemon.element == "grass":
+        damage /= 2
+
+    elif player_pokemon.element == "grass" and rival_pokemon.element == "fire":
+        damage /= 2
+
+    return int(damage)
+        
+
+
+def leveling(player_pokemon):
+    player_pokemon.health = min(player_pokemon.health + 10, 100)
+    for move in player_pokemon.moves:
+        if player_pokemon.moves[move] > 0:
+            player_pokemon.moves[move] += 1
+
+
 def main():
     player = starter_pokemon()
     time.sleep(0.7)
@@ -218,7 +265,7 @@ def main():
     print("Searching for rival...")
     time.sleep(1)
     print("Found a rival!")
-    rival = rival_pokemon()
+    rival = get_rival()
 
     battle_menu(player, rival)
 
