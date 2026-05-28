@@ -187,6 +187,8 @@ def player_attack(player_pokemon, rival_pokemon):
         leveling(player_pokemon)
         print("Your pokemon levelled up and gained +1 attack and +10 health")
         time.sleep(1)
+        save_game(player_pokemon, potions)
+        time.sleep(1)
         print("Searching for rival...")
         time.sleep(1)
         print("Found a rival!")
@@ -194,11 +196,8 @@ def player_attack(player_pokemon, rival_pokemon):
         new_rival = get_rival()
         battle_menu(player_pokemon, new_rival)
         
-
-
     else:
         rival_attack(player_pokemon, rival_pokemon)
-
 
 
 def rival_attack(player_pokemon, rival_pokemon):
@@ -250,7 +249,6 @@ def elements_effectiveness(player_pokemon, rival_pokemon, damage):
     return int(damage)
         
 
-
 def leveling(player_pokemon):
     player_pokemon.health = min(player_pokemon.health + 10, 100)
     for move in player_pokemon.moves:
@@ -258,15 +256,81 @@ def leveling(player_pokemon):
             player_pokemon.moves[move] += 1
 
 
+
+def save_game(player_pokemon, potions):
+    with open("save.txt", "w") as file:
+        file.write(f"{player_pokemon.name}\n")
+        file.write(f"{player_pokemon.health}\n")
+        file.write(f"{player_pokemon.stamina}\n")
+        file.write(f"{potions}\n")
+        print("Game Saved")
+
+
+def load_game():
+    try:
+        with open("save.txt", "r") as file:
+            lines = file.readlines()
+            name = lines[0].strip()
+            health = lines[1].strip()
+            stamina = lines[2].strip()
+            potions = lines[3].strip()
+
+            templates = {"Charmander": charmander,
+                        "Squirtle":squirtle,
+                        "Bulbasaur":bulbasaur}
+            
+            player = templates[name].copy()
+            player.health = health
+            player.stamina = stamina
+
+            print("Save Loaded!")
+            print("Welcome back!")
+
+            print("Searching for rival...")
+            time.sleep(1)
+            print("Found a rival!")
+            rival = get_rival()
+
+            battle_menu(player, rival)
+
+            return player, potions
+        
+    except FileNotFoundError:
+        print("No save file found, starting fresh!")
+        return None, 3
+
+    except (ValueError, IndexError):
+        print("Save file is corrupted, starting fresh!")
+        return None, 3
+
+
 def main():
-    player = starter_pokemon()
-    time.sleep(0.7)
 
-    print("Searching for rival...")
-    time.sleep(1)
-    print("Found a rival!")
-    rival = get_rival()
+    print("1. New Game\n2. Load Game")
+    choice = input()
 
-    battle_menu(player, rival)
+    if choice == "2":
+        player, potions = load_game()
+        if player is None:
+            player = starter_pokemon()
+            time.sleep(0.7)
+
+            print("Searching for rival...")
+            time.sleep(1)
+            print("Found a rival!")
+            rival = get_rival()
+
+            battle_menu(player, rival)
+    else:
+
+        player = starter_pokemon()
+        time.sleep(0.7)
+
+        print("Searching for rival...")
+        time.sleep(1)
+        print("Found a rival!")
+        rival = get_rival()
+
+        battle_menu(player, rival)
 
 main()
